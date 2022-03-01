@@ -1,0 +1,96 @@
+name: Helm Chart Lint, Test and Publish
+
+on:
+  workflow_call:
+    secrets:
+      GCP_SA_KEY_BASE64:
+        description: "Token for pushing packages to Artifact Registry"
+        required: true
+    inputs:
+      runson:
+        description: "Identifier of Github-hosted instance to set as runs-on for jobs"
+        default: "ubuntu-18.04"
+        required: false
+        type: string
+      helm_registry:
+        description: "URL of container registry"
+        required: true
+        type: string
+      chart_name:
+        description: "Name of Helm Chart"
+        required: true
+        type: string
+      chart_path:
+        description: 'Path of the Helm chart'
+        required: true
+        type: string
+      chart_version:
+        description: 'Version of chart for publishing'
+        default: ""
+        required: false
+        type: string
+      validate_namespace:
+        description: "The namespace where the check command will run"
+        required: true
+        type: string
+      
+
+env:
+  HELM_EXPERIMENTAL_OCI: 1
+
+jobs:
+  helm-lint:
+    name: Helm Lint
+    runs-on: ${{ inputs.runson }}
+    
+    steps:
+      - uses: AutoModality/action-clean@v1
+      - uses: actions/checkout@v2
+
+      - name: Helm lint
+        run: helm lint ${{ inputs.chart_path }}
+
+  helm-validate:
+    name: Helm Validate
+    runs-on: ${{ inputs.runson }}
+
+    steps:
+      - uses: AutoModality/action-clean@v1
+      - uses: actions/checkout@v2
+      
+      - name: Helm validate
+        run: |
+          helm template --is-upgrade --validate --release-name "${{ inputs.chart_name }}" -f ${{ inputs.chart_path }}/values.yaml ./${{ inputs.chart_path }} --namespace ${{ inputs.validate_namespace }}
+
+
+  helm-publish:
+    name: Publish Helm Chart - Snapshot
+    needs: [ "helm-lint", "helm-validate" ]
+    runs-on: ${{ inputs.runson }}
+
+    steps:
+      - uses: AutoModality/action-clean@v1
+      - uses: actions/checkout@v2
+
+      - name: Define package version
+        id: vars
+        rune: |
+          version=""
+          package_version=$(helm show chart ${{ inputs.chart_path }} | grep ^version: | sed 's/version: //')
+          if [[ "${{ inputs.chart_version }}" !== "" ]]; then
+            version="${{ inputs.chart_version }}"
+          elif [[ github.ref == 'refs/heads/master' ]]
+            version="$package_version"
+          else 
+            version="$package_version-SNAPSHOT"
+          fi
+          echo "::set-output name=version::$version"
+
+      - name: Package helm chart
+        run: helm package --app-version ${{ steps.vars.outputs.version }} ${{ inputs.chart_path }} 
+      
+      - name: Publish helm chart nonprod
+        run: |
+          chart_archive=$(ls | grep tgz)
+          helm registry login ${{ env.helm_registry }} --username _json_key_base64  --password ${{ secrets.GCP_SA_KEY_BASE64 }}
+          helm push ${chart_archive} oci://${{ inputs.helm_registry }}/helm-charts
