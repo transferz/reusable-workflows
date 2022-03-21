@@ -244,10 +244,9 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          docker build -t $GCR_REGISTRY/$GCR_REPOSITORY:$IMAGE_TAG -t $GCR_REGISTRY/$GCR_REPOSITORY:latest .
-          docker push $GCR_REGISTRY/$GCR_REPOSITORY:latest
-          docker push $GCR_REGISTRY/$GCR_REPOSITORY:$IMAGE_TAG
-          echo "::set-output name=image::$GCR_REGISTRY/$GCR_REPOSITORY:$IMAGE_TAG"
+          docker build -t ${{ input.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG .
+          docker push ${{ input.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG
+
     outputs:
       IMAGE_TAG: ${{ steps.vars.outputs.sha_short }}
   
