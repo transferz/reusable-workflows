@@ -282,7 +282,7 @@ jobs:
           fi
 
   deploy-production:
-    if: github.ref == "refs/heads/master"
+    if: github.ref == 'refs/heads/master'
     name: Deploy to production
     runs-on: ubuntu-20.04
     needs: ["define-vairables"]
