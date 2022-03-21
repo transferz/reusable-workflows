@@ -24,6 +24,9 @@ on:
       HELM_NAMESPACE:
         type: string
         required: true
+      HELM_REPOSITORY:
+        type: string
+        required: true
       HELM_ROLLOUT_TIMEOUT:
         default: "600s"
         type: string
