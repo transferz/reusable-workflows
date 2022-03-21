@@ -165,11 +165,9 @@ jobs:
       - name: Test & publish code coverage
         uses: paambaati/codeclimate-action@v2.6.0
         env:
-          # Set CC_TEST_REPORTER_ID as secret of your repo
           CC_TEST_REPORTER_ID: ${{secrets.secrets.HELM_REGISTRY}}
           JACOCO_SOURCE_PATH: "${{github.workspace}}/src/main/java"
         with:
-          # The report file must be there, otherwise Code Climate won't find it
           coverageCommand: mvn -B clean verify -Dspotbugs.skip=true --settings .github/settings.xml
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
       - name: Generate OpenAPI spec
@@ -244,8 +242,8 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          docker build -t ${{ input.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG .
-          docker push ${{ input.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG
+          docker build -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG .
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG
 
     outputs:
       IMAGE_TAG: ${{ steps.vars.outputs.sha_short }}
