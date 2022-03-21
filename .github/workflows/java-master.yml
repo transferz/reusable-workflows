@@ -192,12 +192,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
+      
       - name: Get commit version
         id: commit
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
       - name: Get Release version
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/tags/*'
         id: version
         run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
     
@@ -208,7 +209,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-20.04
-    needs: [test]
+    needs: ["define-vairables", "test"]
 
     steps:
       - uses: actions/checkout@v1
@@ -225,10 +226,7 @@ jobs:
           java-version: ${{ inputs.JAVA_VERSION }}
       - name: Maven Package
         run: mvn -B clean package -DskipTests -Dspotbugs.skip=true --settings .github/settings.xml
-      
-      - name: Set outputs
-        id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
       
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@master
@@ -239,13 +237,12 @@ jobs:
       
       - name: Configure the docker credentials   
         run: |
-          gcloud auth configure-docker $GKE_ZONE --quiet
-          gcloud container clusters get-credentials $GKE_NAME --zone $GKE_ZONE --project $GKE_PROJECT
+          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
 
       - name: Build, tag, and push image to GCR
         id: build-image
         env:
-          IMAGE_TAG: ${{ steps.vars.outputs.sha_short }}
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
           docker build -t $GCR_REGISTRY/$GCR_REPOSITORY:$IMAGE_TAG -t $GCR_REGISTRY/$GCR_REPOSITORY:latest .
           docker push $GCR_REGISTRY/$GCR_REPOSITORY:latest
@@ -257,7 +254,7 @@ jobs:
   deploy-staging:
     name: Deploy to staging
     runs-on: ubuntu-20.04
-    needs: [build, test]
+    needs: ["build", "define-vairables"]
     steps:
       - uses: actions/checkout@v1
 
@@ -270,7 +267,7 @@ jobs:
 
       - name: Deploy to K8S
         env:
-          IMAGE_TAG: ${{ needs.build.outputs.IMAGE_TAG }}
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
           echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
 
@@ -298,8 +295,8 @@ jobs:
 
       - name: Configure the docker credentials   
         run: |
-          gcloud auth configure-docker $GKE_ZONE --quiet
-          gcloud container clusters get-credentials $GKE_NAME --zone $GKE_ZONE --project $GKE_PROJECT
+          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
+          gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
 
       - name: Download and retag application Docker image
         id: retag-image
@@ -307,9 +304,9 @@ jobs:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
           VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
         run: |
-          docker pull ${GCR_REGISTRY}/${GCR_REPOSITORY}:${IMAGE_TAG}
-          docker image tag ${GCR_REGISTRY}/${GCR_REPOSITORY}:${IMAGE_TAG} ${GCR_REGISTRY}/${GCR_REPOSITORY}:${VERSION_TAG}
-          docker push ${GCR_REGISTRY}/${GCR_REPOSITORY}:${VERSION_TAG}
+          docker pull ${{ inputs.GCR_REGISTRY }}}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG}
+          docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG} ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${VERSION_TAG}
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${VERSION_TAG}
     
       - name: Deploy to K8S
         env:
