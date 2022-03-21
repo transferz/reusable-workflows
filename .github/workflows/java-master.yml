@@ -280,7 +280,7 @@ jobs:
 
   deploy-production:
     if: github.ref == "refs/heads/master"
-    name: Deploy to staging
+    name: Deploy to production
     runs-on: ubuntu-20.04
     needs: ["define-vairables"]
     steps:
@@ -314,17 +314,17 @@ jobs:
         run: |
           echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
 
-        if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${VERSION_TAG}"  ${{ secrets.HELM_REPOSITORY }}/${{ inputs.HELM_CHART }}; then
-          kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
-          kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
-          helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
-          exit 1
-        fi
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${VERSION_TAG}"  ${{ secrets.HELM_REPOSITORY }}/${{ inputs.HELM_CHART }}; then
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
+            helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
+            exit 1
+          fi
 
   publish-docs:
     name: Publish documentation to Readme.io
     runs-on: ubuntu-latest
-    needs: [deploy]
+    needs: [ "deploy-staging" ]
 
     steps:
       - name: Download OpenAPI spec
