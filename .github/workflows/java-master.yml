@@ -262,6 +262,13 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: '297.0.0'
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+      
       - name: Configure the docker credentials   
         run: |
           gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
@@ -293,6 +300,13 @@ jobs:
           path: ${{ inputs.HELM_REPOSITORY }}
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: '297.0.0'
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Configure the docker credentials   
         run: |
