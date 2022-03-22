@@ -258,7 +258,7 @@ jobs:
         with:
           repository: '${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_REPOSITORY }}'
           path: ${{ inputs.HELM_REPOSITORY }}
-          ref: ${{ inputs.GITHUB_BRANCH}}
+          ref: ${{ inputs.GITHUB_BRANCH }}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
       - name: Setup gcloud CLI
@@ -278,7 +278,7 @@ jobs:
         run: |
           echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" ${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }}; then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
