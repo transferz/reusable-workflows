@@ -78,7 +78,7 @@ env:
 
 jobs:
   formatting:
-    if: github.ref == 'refs/heads/feature/*' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/feature/**' || github.ref == 'refs/heads/master'
     name: Check code formatting
     runs-on: ubuntu-20.04
 
@@ -99,7 +99,7 @@ jobs:
         run: mvn -B clean spotless:check --settings .github/settings.xml
 
   spotbugs:
-    if: github.ref == 'refs/heads/feature/*' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/feature/**' || github.ref == 'refs/heads/master'
     name: Check for bugs
     runs-on: ubuntu-20.04
 
@@ -127,7 +127,7 @@ jobs:
           path: target/site/*
 
   test:
-    if: github.ref == 'refs/heads/feature/*' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/feature/**' || github.ref == 'refs/heads/master'
     name: Run unit & integration tests
     runs-on: ubuntu-20.04
     needs: [formatting, spotbugs]
@@ -189,7 +189,7 @@ jobs:
           path: target/openapi.json
       
   define-vairables:
-    if: github.ref == 'refs/tags/*' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/tags/**' || github.ref == 'refs/heads/master'
     name: Retrive Variables
     runs-on: ubuntu-20.04
     steps:
@@ -200,7 +200,7 @@ jobs:
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
       - name: Get Release version
-        if: github.ref == 'refs/tags/*'
+        if: github.ref == 'refs/tags/**'
         id: version
         run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
     
@@ -292,7 +292,7 @@ jobs:
           fi
 
   deploy-production:
-    if: github.ref == 'refs/tags/*'
+    if: github.ref == 'refs/tags/**'
     name: Deploy to production
     runs-on: ubuntu-20.04
     needs: ["define-vairables"]
