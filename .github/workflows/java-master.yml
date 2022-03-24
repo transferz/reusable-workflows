@@ -230,7 +230,7 @@ jobs:
       
       - name: Configure the docker credentials   
         run: |
-          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
+          gcloud auth configure-docker --quiet
 
       - name: Build, tag, and push image to GCR
         id: build-image
@@ -306,7 +306,7 @@ jobs:
 
       - name: Configure the docker credentials   
         run: |
-          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
+          gcloud auth configure-docker --quiet
           gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
 
       - name: Download and retag application Docker image
