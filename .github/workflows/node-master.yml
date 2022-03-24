@@ -18,13 +18,16 @@ on:
       GCR_REPOSITORY:
         type: string
         required: true 
-      GTIHUB_ACTIONS_EMAIL:
+      GCP_ACCOUNT_USER:
         type: string
         required: true
       HELM_NAMESPACE:
         type: string
         required: true
       HELM_REPOSITORY:
+        type: string
+        required: true
+      HELM_REGISTRY:
         type: string
         required: true
       HELM_ROLLOUT_TIMEOUT:
@@ -38,21 +41,6 @@ on:
         required: true
       HELM_CHART_VERSION:
         type: string
-        required: true
-    secrets:
-      ACTIONS_SSH_KEY:
-        required: true
-      HELM_REGISTRY:
-        required: true
-      GCP_ACCOUNT_EMAIL:
-        required: true
-      GCP_ACCOUNT_KEY:
-        required: true
-      GITHUB_TOKEN:
-        required: true
-      GITHUB_REPO_USERNAME:
-        required: true
-      GITHUB_REPO_PASSWORD:
         required: true
 
 env:
@@ -142,9 +130,9 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
+          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
@@ -193,9 +181,9 @@ jobs:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
           VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
         run: |
-          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
+          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0

@@ -18,27 +18,33 @@ on:
       GCR_REGISTRY:
         type: string
         required: true
+      GCP_ACCOUNT_USER:
+        type: string
+        required: true
       GCR_REPOSITORY:
         type: string
-        required: true   
-      HELM_NAMESPACE:
+        required: true  
+      HELM_CHART:
         type: string
-        required: true
-      HELM_REPOSITORY:
-        type: string
-        required: true
-      HELM_ROLLOUT_TIMEOUT:
-        default: "600s"
-        type: string
+        default: "service" 
       HELM_VALUES:
         type: string
         required: true
-      HELM_CHART:
+      HELM_NAMESPACE:
+        type: string
+        default: "staging"
+      HELM_REPOSITORY:
+        type: string
+        required: true 
+      HELM_ROLLOUT_TIMEOUT:
+        default: "600s"
+        type: string
+      HELM_REGISTRY:
         type: string
         required: true
       HELM_CHART_VERSION:
         type: string
-        required: true
+        default: "0.1.0"
       GTIHUB_ACTIONS_EMAIL:
         type: string
         required: true
@@ -54,24 +60,6 @@ on:
       README_URL:
         type: string
         required: true
-    secrets:
-      README_IO_API_KEY:
-        required: true
-      HELM_REGISTRY:
-        required: true
-      ACTIONS_SSH_KEY:
-        required: true
-      GCP_ACCOUNT_USER:
-        required: true
-      GCP_ACCOUNT_KEY:
-        required: true
-      CC_TEST_REPORTER_ID:
-        required: true
-      GITHUB_REPO_USERNAME:
-        required: true
-      GITHUB_REPO_PASSWORD:
-        required: true
-
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
   GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
@@ -168,13 +156,15 @@ jobs:
       - name: Test & publish code coverage
         uses: paambaati/codeclimate-action@v2.6.0
         env:
-          CC_TEST_REPORTER_ID: ${{secrets.secrets.HELM_REGISTRY}}
-          JACOCO_SOURCE_PATH: "${{github.workspace}}/src/main/java"
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+          JACOCO_SOURCE_PATH: "${{ github.workspace }}/src/main/java"
         with:
           coverageCommand: mvn -B clean verify -Dspotbugs.skip=true --settings .github/settings.xml
-          coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
+          coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
+
       - name: Generate OpenAPI spec
         run: mvn post-integration-test -DgenerateOpenApiDocs=true -DskipTests --settings .github/settings.xml
+      
       - name: Update API url in OpenAPI spec
         uses: jossef/action-set-json-field@v1
         with:
@@ -182,6 +172,7 @@ jobs:
           field: servers
           value: ${{ inputs.GATEWAY_URLS }}
           parse_json: true
+      
       - name: Upload OpenAPI spec
         uses: actions/upload-artifact@v1
         with:
@@ -282,9 +273,9 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
+          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
@@ -332,7 +323,7 @@ jobs:
         env:
           VERSION_TAG: ${{ needs.define-vairables.outputs.version }}
         run: |
-          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
+          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
 
           if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${VERSION_TAG}"  ${{ secrets.HELM_REPOSITORY }}/${{ inputs.HELM_CHART }}; then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
