@@ -1,0 +1,203 @@
+name: Node Workflow
+
+on:
+  workflow_call:
+    inputs:
+      GKE_NAME:
+        type: string
+        required: true
+      GKE_ZONE:
+        type: string
+        required: true
+      GKE_PROJECT:
+        type: string
+        required: true
+      GCR_REGISTRY:
+        type: string
+        required: true
+      GCR_REPOSITORY:
+        type: string
+        required: true 
+      GTIHUB_ACTIONS_EMAIL:
+        type: string
+        required: true
+      HELM_NAMESPACE:
+        type: string
+        required: true
+      HELM_REPOSITORY:
+        type: string
+        required: true
+      HELM_ROLLOUT_TIMEOUT:
+        default: "600s"
+        type: string
+      HELM_VALUES:
+        type: string
+        required: true
+      HELM_CHART:
+        type: string
+        required: true
+      HELM_CHART_VERSION:
+        type: string
+        required: true
+    secrets:
+      ACTIONS_SSH_KEY:
+        required: true
+      HELM_REGISTRY:
+        required: true
+      GCP_ACCOUNT_EMAIL:
+        required: true
+      GCP_ACCOUNT_KEY:
+        required: true
+      GITHUB_TOKEN:
+        required: true
+      GITHUB_REPO_USERNAME:
+        required: true
+      GITHUB_REPO_PASSWORD:
+        required: true
+
+env:
+  GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
+  GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
+
+jobs:
+  define-vairables:
+    if: github.ref == 'refs/tags/**' || github.ref == 'refs/heads/master'
+    name: Retrive Variables
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      
+      - name: Get commit version
+        id: commit
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Get Release version
+        if: github.ref == 'refs/tags/**'
+        id: version
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+    
+    outputs:
+      commit: ${{ steps.commit.outputs.sha_short }}
+      version: ${{ steps.version.outputs.VERSION }}
+  
+  build:
+    if: github.ref == 'refs/heads/master' && "!contains(github.event.head_commit.message, 'skip ci')"
+    name: Build
+    needs: [ "define-vairables" ]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: '297.0.0'
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+      
+      - name: Configure the docker credentials
+        run: |
+          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
+          gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
+
+      - name: npm install
+        run: |
+          npm ci
+
+      - name: Build, tag, and push image to GCR
+        id: build-image
+        env:
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+        run: |
+          docker build --build-arg npm_token=${{ secrets.GITHUB_TOKEN }} --build-arg COMMIT=${IMAGE_TAG} -t $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG} .
+          docker push $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG}
+  
+  deploy-staging:
+    if: github.ref == 'refs/heads/master' && "!contains(github.event.head_commit.message, 'skip ci')"
+    name: Deploy to Production
+    runs-on: ubuntu-18.04
+    needs: [ "define-vairables" ]
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: '${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_REPOSITORY }}'
+          path: ${{ inputs.HELM_REPOSITORY }}
+          ref: ${{ inputs.GITHUB_BRANCH}}
+          ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: '297.0.0'
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+
+      - name: Configure the docker credentials
+        run: |
+          gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
+      
+      - name: Deploy to K8S
+        env:
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+        run: |
+          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
+
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
+            helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
+            exit 1
+          fi
+
+  deploy-production:
+    if: github.ref == 'refs/tags/**' && "!contains(github.event.head_commit.message, 'skip ci')"
+    name: Deploy to Production
+    runs-on: ubuntu-18.04
+    needs: [ "define-vairables" ]
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: '${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_REPOSITORY }}'
+          path: ${{ inputs.HELM_REPOSITORY }}
+          ref: ${{ inputs.GITHUB_BRANCH}}
+          ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: '297.0.0'
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+
+      - name: Configure the docker credentials
+        run: |
+          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
+          gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
+      
+      - name: Download and retag application Docker image
+        id: retag-image
+        env:
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
+        run: |
+          docker pull ${{ inputs.GCR_REGISTRY }}}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG}
+          docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG} ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${VERSION_TAG}
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${VERSION_TAG}
+
+      - name: Deploy to K8S
+        env:
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
+        run: |
+          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ secrets.HELM_REGISTRY }} --username ${{ secrets.GCP_ACCOUNT_USER }} --password-stdin
+
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ secrets.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
+            helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
+            exit 1
+          fi

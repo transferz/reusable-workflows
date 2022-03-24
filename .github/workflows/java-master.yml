@@ -1,4 +1,4 @@
-name: Master
+name: Jave Workflow
 
 on:
   workflow_call:
