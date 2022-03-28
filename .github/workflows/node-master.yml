@@ -23,7 +23,7 @@ on:
         required: true
       HELM_NAMESPACE:
         type: string
-        required: true
+        default: "staging"
       HELM_REPOSITORY:
         type: string
         required: true
@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: GCloud Authentication
+      - name: Gcloud Authentication
         uses: google-github-actions/auth@v0
         with:
           credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
@@ -107,9 +107,9 @@ jobs:
   
   deploy-staging:
     if: github.ref == 'refs/heads/master' && "!contains(github.event.head_commit.message, 'skip ci')"
-    name: Deploy to Production
+    name: Deploy to Staging
     runs-on: ubuntu-18.04
-    needs: [ "define-vairables" ]
+    needs: [ "define-vairables", "build" ]
     steps:
       - uses: actions/checkout@v1
 
@@ -120,7 +120,7 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
-      - name: GCloud Authentication
+      - name: Gcloud Authentication
         uses: google-github-actions/auth@v0
         with:
           credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
@@ -164,7 +164,7 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
-      - name: GCloud Authentication
+      - name: Gcloud Authentication
         uses: google-github-actions/auth@v0
         with:
           credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
