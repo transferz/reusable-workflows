@@ -38,13 +38,19 @@ on:
         required: true
       HELM_CHART:
         type: string
-        default: "0.1.0"
+        default: "service"
       HELM_CHART_VERSION:
         type: string
-        required: true
+        default: "0.1.0"
       GITHUB_BRANCH:
         default: "master"
         type: string
+      GITHUB_ORG:
+        type: string
+        required: true
+    secrets:
+      GCP_ACCOUNT_KEY:
+        required: true
 
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
@@ -72,24 +78,24 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
   
   build:
-    if: github.ref == 'refs/heads/master' && "!contains(github.event.head_commit.message, 'skip ci')"
+    if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
     name: Build
     needs: [ "define-vairables" ]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v1
 
-      - name: Gcloud Authentication
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+      # - name: Gcloud Authentication
+      #   uses: google-github-actions/auth@v0
+      #   with:
+      #     credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
       
       - name: Configure the docker credentials
         run: |
@@ -109,7 +115,7 @@ jobs:
           docker push $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG}
   
   deploy-staging:
-    if: github.ref == 'refs/heads/master' && "!contains(github.event.head_commit.message, 'skip ci')"
+    if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
     name: Deploy to Staging
     runs-on: ubuntu-18.04
     needs: [ "define-vairables", "build" ]
@@ -123,17 +129,17 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
-      - name: Gcloud Authentication
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+      # - name: Gcloud Authentication
+      #   uses: google-github-actions/auth@v0
+      #   with:
+      #     credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Configure the docker credentials
         run: |
@@ -145,7 +151,7 @@ jobs:
         run: |
           echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version ${{ inputs.HELM_CHART_VERSION }}; then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
@@ -153,7 +159,7 @@ jobs:
           fi
 
   deploy-production:
-    if: github.ref == 'refs/tags/**' && "!contains(github.event.head_commit.message, 'skip ci')"
+    if: github.ref == 'refs/tags/**' && !contains(github.event.head_commit.message, 'skip ci')
     name: Deploy to Production
     runs-on: ubuntu-18.04
     needs: [ "define-vairables" ]
@@ -167,17 +173,17 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
-      - name: Gcloud Authentication
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+      # - name: Gcloud Authentication
+      #   uses: google-github-actions/auth@v0
+      #   with:
+      #     credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Configure the docker credentials
         run: |
@@ -201,7 +207,7 @@ jobs:
         run: |
           echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} ;then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version ${{ inputs.HELM_CHART_VERSION }}; then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
