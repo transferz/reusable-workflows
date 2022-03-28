@@ -49,18 +49,16 @@ on:
         type: string
         required: true
     secrets:
-      # GITHUB_REPO_USERNAME:
-      #   required: true
-      # GITHUB_REPO_PASSWORD:
-      #   required: true
+      GH_TOKEN:
+        required: true
       ACTIONS_SSH_KEY:
         required: true
       GCP_ACCOUNT_KEY:
         required: true
 
-env:
-  GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
-  GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
+# env:
+#   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
+#   GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
 
 jobs:
   define-vairables:
