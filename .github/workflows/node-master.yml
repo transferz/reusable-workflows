@@ -111,8 +111,8 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          docker build --build-arg npm_token=${{ secrets.GH_TOKEN }} --build-arg COMMIT=${IMAGE_TAG} -t $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG} .
-          docker push $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG}
+          docker build --build-arg npm_token=${{ secrets.GH_TOKEN }} --build-arg COMMIT=${IMAGE_TAG} -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG} .
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG}
   
   deploy-staging:
     if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
