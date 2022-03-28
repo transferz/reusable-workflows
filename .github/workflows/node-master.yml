@@ -38,10 +38,13 @@ on:
         required: true
       HELM_CHART:
         type: string
-        required: true
+        default: "service" 
       HELM_CHART_VERSION:
         type: string
         required: true
+      GITHUB_BRANCH:
+        default: "master"
+        type: string
 
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
