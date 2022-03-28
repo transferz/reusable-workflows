@@ -49,8 +49,6 @@ on:
         type: string
         required: true
     secrets:
-      GITHUB_TOKEN_STRING:
-        required: true
       GITHUB_REPO_USERNAME:
         required: true
       GITHUB_REPO_PASSWORD:
