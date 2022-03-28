@@ -106,10 +106,6 @@ jobs:
           gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
           gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
 
-      - name: npm install
-        run: |
-          npm ci
-
       - name: Build, tag, and push image to GCR
         id: build-image
         env:
