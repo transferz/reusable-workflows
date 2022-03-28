@@ -115,7 +115,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          docker build --build-arg npm_token=${{ secrets.GITHUB_TOKEN_STRING }} --build-arg COMMIT=${IMAGE_TAG} -t $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG} .
+          docker build --build-arg npm_token=${{ secrets.GH_TOKEN }} --build-arg COMMIT=${IMAGE_TAG} -t $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG} .
           docker push $GCR_REGISTRY/$GCR_REPOSITORY:${IMAGE_TAG}
   
   deploy-staging:

@@ -49,8 +49,6 @@ on:
         type: string
         required: true
     secrets:
-      GH_TOKEN:
-        required: true
       GCP_ACCOUNT_KEY:
         required: true
       ACTIONS_SSH_KEY:
