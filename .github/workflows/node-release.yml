@@ -55,6 +55,8 @@ on:
         required: true
       GCP_ACCOUNT_KEY:
         required: true
+      ACTIONS_SSH_KEY:
+        required: true
 
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
