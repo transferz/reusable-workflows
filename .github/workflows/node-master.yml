@@ -98,8 +98,6 @@ jobs:
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
       
       - name: Configure the docker credentials
         run: |
@@ -138,8 +136,6 @@ jobs:
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Configure the docker credentials
         run: |
@@ -149,7 +145,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
         run: |
-          echo "${{ secrets.GCP_ACCOUNT_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
+          echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
           if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version ${{ inputs.HELM_CHART_VERSION }}; then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
