@@ -76,12 +76,17 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: GCloud Authentication
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
       
       - name: Configure the docker credentials
         run: |
@@ -115,12 +120,17 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
+      - name: GCloud Authentication
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Configure the docker credentials
         run: |
@@ -154,12 +164,17 @@ jobs:
           ref: ${{ inputs.GITHUB_BRANCH}}
           ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
 
+      - name: GCloud Authentication
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0
         with:
           version: '297.0.0'
-          service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
-          service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
+          # service_account_email: ${{ secrets.GCP_ACCOUNT_EMAIL }}
+          # service_account_key: ${{ secrets.GCP_ACCOUNT_KEY }}
 
       - name: Configure the docker credentials
         run: |
