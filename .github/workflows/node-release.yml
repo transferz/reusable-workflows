@@ -49,10 +49,10 @@ on:
         type: string
         required: true
     secrets:
-      GITHUB_REPO_USERNAME:
-        required: true
-      GITHUB_REPO_PASSWORD:
-        required: true
+      # GITHUB_REPO_USERNAME:
+      #   required: true
+      # GITHUB_REPO_PASSWORD:
+      #   required: true
       GCP_ACCOUNT_KEY:
         required: true
       ACTIONS_SSH_KEY:
