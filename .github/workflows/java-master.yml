@@ -283,7 +283,7 @@ jobs:
         run: |
           echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
-          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="${IMAGE_TAG}" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version ${{ inputs.HELM_CHART_VERSION }} ; then
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag="$IMAGE_TAG" oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version ${{ inputs.HELM_CHART_VERSION }} ; then
             kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }}
             kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${IMAGE_TAG} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
