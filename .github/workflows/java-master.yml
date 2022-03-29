@@ -278,6 +278,9 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
       
+      - name: "Check Helm Version"
+        run: helm version 
+      
       - name: Deploy to K8S
         env:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
