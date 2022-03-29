@@ -68,6 +68,7 @@ on:
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
   GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
+  HELM_EXPERIMENTAL_OCI: 1
 
 jobs:
   formatting:
