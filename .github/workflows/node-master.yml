@@ -49,6 +49,8 @@ on:
         type: string
         required: true
     secrets:
+      HELM_REGISTRY_KEY:
+        required: true
       GH_TOKEN:
         required: true
       ACTIONS_SSH_KEY:
