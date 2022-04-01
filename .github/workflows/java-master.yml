@@ -61,8 +61,6 @@ on:
         type: string
         required: true
     secrets:
-      GITHUB_REPO_USERNAME:
-      GITHUB_REPO_PASSWORD:
       CC_TEST_REPORTER_ID:
         required: true
       ACTIONS_SSH_KEY:

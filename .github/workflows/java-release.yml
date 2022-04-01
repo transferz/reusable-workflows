@@ -61,8 +61,6 @@ on:
         type: string
         required: true
     secrets:
-      GITHUB_REPO_USERNAME:
-      GITHUB_REPO_PASSWORD:
       ACTIONS_SSH_KEY:
         required: true
       GCP_ACCOUNT_KEY:
