@@ -53,6 +53,8 @@ on:
         required: true
       ACTIONS_SSH_KEY:
         required: true
+      HELM_REGISTRY_KEY:
+        required: true
 
 
 jobs:
