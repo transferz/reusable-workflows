@@ -49,6 +49,8 @@ on:
         type: string
         required: true
     secrets:
+      CC_TEST_REPORTER_ID:
+        required: true
       HELM_REGISTRY_KEY:
         required: true
       GH_TOKEN:
@@ -63,6 +65,34 @@ on:
 #   GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
 
 jobs:
+  test:
+    if: github.ref !== 'refs/heads/master'
+    name: Run quality checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12, 14]
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Build and lint
+      run: |
+        npm ci --legacy-peer-deps
+        npm run lint
+        npm run build
+    
+    - name: Run tests and report coverage
+      uses: paambaati/codeclimate-action@v2.7.4
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+      with:
+        coverageCommand: npm run coverage
+
   define-vairables:
     if: github.ref == 'refs/tags/**' || github.ref == 'refs/heads/master'
     name: Retrive Variables
@@ -82,7 +112,7 @@ jobs:
     outputs:
       commit: ${{ steps.commit.outputs.sha_short }}
       version: ${{ steps.version.outputs.VERSION }}
-  
+
   build:
     if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
     name: Build
@@ -113,7 +143,7 @@ jobs:
         run: |
           docker build --build-arg npm_token=${{ secrets.GH_TOKEN }} --build-arg COMMIT=${IMAGE_TAG} -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG} .
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG}
-  
+
   deploy-staging:
     if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
     name: Deploy to Staging
