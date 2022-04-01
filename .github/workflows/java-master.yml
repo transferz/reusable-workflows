@@ -61,9 +61,17 @@ on:
         type: string
         required: true
     secrets:
+      GITHUB_REPO_USERNAME:
+      GITHUB_REPO_PASSWORD:
+      CC_TEST_REPORTER_ID:
+        required: true
       ACTIONS_SSH_KEY:
         required: true
       GCP_ACCOUNT_KEY:
+        required: true
+      HELM_REGISTRY_KEY:
+        required: true
+      README_IO_API_KEY:
         required: true
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
