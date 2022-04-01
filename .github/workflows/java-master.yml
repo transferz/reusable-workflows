@@ -44,7 +44,7 @@ on:
         required: true
       HELM_CHART_VERSION:
         type: string
-        default: "0.1.0"
+        default: "0.3.1"
       GTIHUB_ACTIONS_EMAIL:
         type: string
         required: true
