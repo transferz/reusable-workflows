@@ -66,7 +66,7 @@ on:
 
 jobs:
   test:
-    if: github.ref !== 'refs/heads/master'
+    if: github.ref != 'refs/heads/master'
     name: Run quality checks
     runs-on: ubuntu-latest
     strategy:
