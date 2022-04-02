@@ -60,9 +60,8 @@ on:
       GCP_ACCOUNT_KEY:
         required: true
 
-# env:
-#   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
-#   GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
+env:
+  HELM_EXPERIMENTAL_OCI: 1
 
 jobs:
   test:
