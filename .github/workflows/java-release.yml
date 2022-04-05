@@ -48,23 +48,13 @@ on:
       GTIHUB_ACTIONS_EMAIL:
         type: string
         required: true
-      GATEWAY_URLS:
-        type: string
-        required: true
       GITHUB_ORG:
         type: string
         required: true
       GITHUB_BRANCH:
         default: "master"
         type: string
-      README_URL:
-        type: string
-        required: true
     secrets:
-      GITHUB_REPO_USERNAME:
-        required: true
-      GITHUB_REPO_PASSWORD:
-        required: true
       ACTIONS_SSH_KEY:
         required: true
       GCP_ACCOUNT_KEY:
@@ -73,8 +63,6 @@ on:
         required: true
 
 env:
-  GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
-  GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
   HELM_EXPERIMENTAL_OCI: 1
 
 jobs: 
