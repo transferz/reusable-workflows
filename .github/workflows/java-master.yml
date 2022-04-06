@@ -207,12 +207,7 @@ jobs:
       - name: Get commit version
         id: commit
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-
-      - name: Get Release version
-        if: github.ref == 'refs/tags/**'
-        id: version
-        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
-    
+        
     outputs:
       commit: ${{ steps.commit.outputs.sha_short }}
       version: ${{ steps.version.outputs.VERSION }}
