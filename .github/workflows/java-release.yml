@@ -69,7 +69,7 @@ env:
 
 jobs: 
   define-vairables:
-    if: github.ref == 'refs/tags/**' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/tags/**'
     name: Retrive Variables
     runs-on: ubuntu-20.04
     steps:
@@ -89,7 +89,7 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
 
   retag:
-    if:
+    if: github.ref == 'refs/tags/**'
     name: Retag Image
     runs-on: ubuntu-20.04
     needs: ["define-vairables"]
