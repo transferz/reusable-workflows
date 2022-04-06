@@ -61,6 +61,8 @@ on:
         type: string
         required: true
     secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
       GITHUB_REPO_USERNAME:
         required: true
       GITHUB_REPO_PASSWORD:

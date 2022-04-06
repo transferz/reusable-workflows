@@ -49,6 +49,8 @@ on:
         type: string
         required: true
     secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
       CC_TEST_REPORTER_ID:
         required: true
       HELM_REGISTRY_KEY:
