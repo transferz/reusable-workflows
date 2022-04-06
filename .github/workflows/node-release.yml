@@ -137,3 +137,15 @@ jobs:
             helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
             exit 1
           fi
+      
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: "deployments"
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
+          SLACK_ICON: " https://github.com/rtCamp.png?size=48"
+          SLACK_MESSAGE: ${{ github.event.head_commit.message }}
+          SLACK_TITLE: "Commit_message"
+          SLACK_USERNAME: "GitHub_Actions"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
