@@ -69,7 +69,6 @@ env:
 
 jobs: 
   define-vairables:
-    if: github.ref == 'refs/tags/**'
     name: Retrive Variables
     runs-on: ubuntu-20.04
     steps:
@@ -89,7 +88,6 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
 
   retag:
-    if: github.ref == 'refs/tags/**'
     name: Retag Image
     runs-on: ubuntu-20.04
     needs: ["define-vairables"]
@@ -119,7 +117,6 @@ jobs:
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${VERSION_TAG}
 
   deploy:
-    if: github.ref == 'refs/tags/**'
     name: Deploy
     runs-on: ubuntu-20.04
     needs: ["define-vairables"]
