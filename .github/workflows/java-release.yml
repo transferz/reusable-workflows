@@ -111,8 +111,8 @@ jobs:
           IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
           VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
         run: |
-          docker pull ${{ inputs.GCR_REGISTRY }}}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG
-          docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
+          docker pull "${{ inputs.GCR_REGISTRY }}}/${{ inputs.GCR_REPOSITORY }}:${{ needs.define-vairables.outputs.commit }}"
+          docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${{ needs.define-vairables.outputs.commit }} ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
 
   deploy:
