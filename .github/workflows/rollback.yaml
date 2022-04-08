@@ -49,6 +49,8 @@ on:
         default: "master"
         type: string
     secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
       ACTIONS_SSH_KEY:
         required: true
       GCP_ACCOUNT_KEY:
