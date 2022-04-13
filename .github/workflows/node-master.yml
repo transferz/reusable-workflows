@@ -95,7 +95,7 @@ jobs:
         coverageCommand: npm run coverage
 
   define-vairables:
-    if: github.ref == 'refs/tags/**' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     name: Retrive Variables
     runs-on: ubuntu-20.04
     steps:
