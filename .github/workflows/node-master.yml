@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12, 14]
+        node-version: [12]
     steps:
     - uses: actions/checkout@v1
     
@@ -195,6 +195,6 @@ jobs:
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
           SLACK_ICON: " https://github.com/rtCamp.png?size=48"
           SLACK_MESSAGE: ${{ github.event.head_commit.message }}
-          SLACK_TITLE: "Commit_message"
-          SLACK_USERNAME: "GitHub_Actions"
+          SLACK_TITLE: "Commit Message"
+          SLACK_USERNAME: "GitHub Actions"
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
