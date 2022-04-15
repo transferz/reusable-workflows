@@ -48,6 +48,9 @@ on:
       GITHUB_ORG:
         type: string
         required: true
+      TEST_DISABLE_LINT:
+        type: boolean
+        default: false
     secrets:
       SLACK_WEBHOOK_URL:
         required: true
@@ -82,10 +85,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     
+    - name: "Npm: Lint"
+      if: ! ${{ inputs.TEST_DISABLE_LINT }}
+      run: |
+        npm run lint
+
     - name: Build and lint
       run: |
         npm ci --legacy-peer-deps
-        npm run lint
         npm run build
     
     - name: Run tests and report coverage
