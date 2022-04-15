@@ -48,9 +48,9 @@ on:
       GITHUB_ORG:
         type: string
         required: true
-      TEST_DISABLE_LINT:
-        type: boolean
-        default: false
+      NODEJS_VERSION:
+        type: string
+        default: "15"
     secrets:
       SLACK_WEBHOOK_URL:
         required: true
@@ -83,7 +83,7 @@ jobs:
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
-        node-version: "15" # ${{ matrix.node-version }}
+        node-version: "${{ inputs.NODEJS_VERSION }}" # ${{ matrix.node-version }}
 
     - name: Build and lint
       run: |
