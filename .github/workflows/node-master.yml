@@ -74,25 +74,26 @@ jobs:
     if: github.ref != 'refs/heads/master'
     name: Run quality checks
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [12]
+    # strategy:
+    #   matrix:
+    #     node-version: [15]
     steps:
     - uses: actions/checkout@v1
     
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: "15" # ${{ matrix.node-version }}
 
     - name: Build and lint
       run: |
         npm ci --legacy-peer-deps
         npm run build
         npm run lint
+        npm run test
     
     - name: Run tests and report coverage
-      uses: paambaati/codeclimate-action@v2.7.4
+      uses: paambaati/codeclimate-action@v3.0.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
