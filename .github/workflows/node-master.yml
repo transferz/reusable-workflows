@@ -84,16 +84,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    
-    - name: "Npm: Lint"
-      if: ! inputs.TEST_DISABLE_LINT 
-      run: |
-        npm run lint
 
     - name: Build and lint
       run: |
         npm ci --legacy-peer-deps
         npm run build
+        npm run lint
     
     - name: Run tests and report coverage
       uses: paambaati/codeclimate-action@v2.7.4
