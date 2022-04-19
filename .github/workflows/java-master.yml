@@ -155,7 +155,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install postgresql-12
-          psql postgresql://postgres@localhost/postgres < .docker/setup-postgres.sql
+
+          sql_files=($( ls .docker | tr -s "\n" " " | tr -s " "))
+
+          for file in "${sql_files[@]}";
+          do
+            psql postgresql://postgres@localhost/postgres < .docker/$file
+          done
         env:
           PGPASSWORD: aVeryHardPasswordToGuess
       - name: Cache Maven dependencies
