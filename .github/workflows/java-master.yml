@@ -6,6 +6,9 @@ on:
       JAVA_VERSION:
         type: string
         required: true
+      POSTRGES_SERVICE_IMAGE:
+        type: string
+        default: "postgres:12"
       GKE_NAME:
         type: string
         required: true
@@ -137,7 +140,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:12
+        image: ${{ imputs.POSTRGES_SERVICE_IMAGE }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: aVeryHardPasswordToGuess
@@ -171,7 +174,7 @@ jobs:
       - name: Test & publish code coverage
         uses: paambaati/codeclimate-action@v3.0.0
         env:
-          CI: true
+          CI: "true"
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
           JACOCO_SOURCE_PATH: "${{ github.workspace }}/src/main/java"
         with:
