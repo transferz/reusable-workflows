@@ -140,7 +140,7 @@ jobs:
 
     services:
       postgres:
-        image: ${{ imputs.POSTRGES_SERVICE_IMAGE }}
+        image: ${{ inputs.POSTRGES_SERVICE_IMAGE }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: aVeryHardPasswordToGuess
