@@ -152,10 +152,11 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Setup database
+        working-directory: .docker
         run: |
           sudo apt-get update
           sudo apt-get install postgresql-12
-          .docker/setup-postgres.sh
+          bash setup-postgres.sh
         env:
           PGPASSWORD: aVeryHardPasswordToGuess
       - name: Cache Maven dependencies
