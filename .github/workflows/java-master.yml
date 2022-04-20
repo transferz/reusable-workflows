@@ -181,23 +181,6 @@ jobs:
         with:
           coverageCommand: mvn -B clean verify -Dspotbugs.skip=true --settings .github/settings.xml
           coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
-
-      - name: Generate OpenAPI spec
-        run: mvn post-integration-test -DgenerateOpenApiDocs=true -DskipTests --settings .github/settings.xml
-      
-      - name: Update API url in OpenAPI spec
-        uses: jossef/action-set-json-field@v1
-        with:
-          file: target/openapi.json
-          field: servers
-          value: ${{ inputs.GATEWAY_URLS }}
-          parse_json: true
-      
-      - name: Upload OpenAPI spec
-        uses: actions/upload-artifact@v1
-        with:
-          name: OpenApi spec
-          path: target/openapi.json
       
   define-vairables:
     if: github.ref == 'refs/heads/master'
