@@ -155,7 +155,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install postgresql-12
-          curl .docker/setup-postgres.sh
+          .docker/setup-postgres.sh
         env:
           PGPASSWORD: aVeryHardPasswordToGuess
       - name: Cache Maven dependencies
