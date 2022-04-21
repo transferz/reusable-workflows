@@ -86,6 +86,8 @@ jobs:
         node-version: "${{ inputs.NODEJS_VERSION }}" # ${{ matrix.node-version }}
 
     - name: Build and lint
+      env: 
+        CI: true
       run: |
         npm ci --legacy-peer-deps
         npm run build
