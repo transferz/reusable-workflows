@@ -84,6 +84,7 @@ on:
       README_IO_API_KEY:
         required: true
       README_IO_PUBLIC_API_KEY:
+        required: false
 
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
