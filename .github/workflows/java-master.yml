@@ -62,7 +62,7 @@ on:
         type: string
       PUBLIC_README_URL:
         type: string
-        required: true
+        required: false
       INTERNAL_README_URL:
         type: string
         required: true
