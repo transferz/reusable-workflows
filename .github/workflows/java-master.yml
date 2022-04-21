@@ -60,7 +60,10 @@ on:
       GITHUB_BRANCH:
         default: "master"
         type: string
-      README_URL:
+      PUBLIC_README_URL:
+        type: string
+        required: true
+      INTERNAL_README_URL:
         type: string
         required: true
     secrets:
@@ -80,6 +83,8 @@ on:
         required: true
       README_IO_API_KEY:
         required: true
+      README_IO_PUBLIC_API_KEY:
+
 env:
   GITHUB_REPO_USERNAME: ${{ secrets.GITHUB_REPO_USERNAME }}
   GITHUB_REPO_PASSWORD: ${{ secrets.GITHUB_REPO_PASSWORD }}
@@ -181,6 +186,23 @@ jobs:
         with:
           coverageCommand: mvn -B clean verify -Dspotbugs.skip=true --settings .github/settings.xml
           coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
+
+      - name: Generate OpenAPI spec
+        run: mvn post-integration-test -DgenerateOpenApiDocs=true -DskipTests --settings .github/settings.xml
+      
+      - name: Update API url in OpenAPI spec
+        uses: jossef/action-set-json-field@v1
+        with:
+          file: target/openapi.json
+          field: servers
+          value: ${{ inputs.GATEWAY_URLS }}
+          parse_json: true
+      
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v1
+        with:
+          name: OpenApi spec
+          path: target/openapi.json
       
   define-vairables:
     if: github.ref == 'refs/heads/master'
@@ -298,9 +320,15 @@ jobs:
         with:
           name: OpenApi spec
           path: target/
-      - name: Publish OpenAPI spec to readme.io
-        run: |
-          curl --location --request PUT '${{ inputs.README_URL }}' --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_API_KEY }}:' --form 'spec=@target/openapi.json'
+      
+      - name: Publish OpenAPI spec to internal readme.io
+        run: |  
+          curl --location --request PUT "${{ inputs.INTERNAL_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_API_KEY }}:' --form 'spec=@target/openapi.json'
+      
+      - name: Publish OpenAPI spec to public readme.io
+        if: '${{ inputs.PUBLIC_README_URL == "" }}'
+        run: |  
+          curl --location --request PUT "${{ inputs.PUBLIC_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_PUBLIC_API_KEY }}:' --form 'spec=@target/openapi.json'
 
       - name: Slack Notification
         if: ${{ failure() }}
