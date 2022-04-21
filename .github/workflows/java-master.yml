@@ -329,7 +329,7 @@ jobs:
           curl --location --request PUT "${{ inputs.INTERNAL_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_API_KEY }}:' --form 'spec=@target/openapi.json'
       
       - name: Publish OpenAPI spec to public readme.io
-        if: '${{ inputs.PUBLIC_README_URL == "" }}'
+        if: ${{ inputs.PUBLIC_README_URL == '' }}
         run: |  
           curl --location --request PUT "${{ inputs.PUBLIC_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_PUBLIC_API_KEY }}:' --form 'spec=@target/openapi.json'
 
