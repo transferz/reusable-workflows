@@ -61,14 +61,14 @@ on:
         default: "master"
         type: string
       PUBLISH_TO_PUBLIC_README:
-        type: boolean
-        default: false
+        type: string
+        default: "false"
       PUBLIC_API_ID:
         type: string
         required: false
       PUBLISH_TO_INTERNAL_README:
-        type: boolean
-        default: false
+        type: string
+        default: "false"
       INTERNAL_API_ID:
         type: string
         required: false
