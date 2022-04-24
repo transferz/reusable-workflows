@@ -60,12 +60,18 @@ on:
       GITHUB_BRANCH:
         default: "master"
         type: string
-      PUBLIC_README_URL:
+      PUBLISH_TO_PUBLIC_README:
+        type: boolean
+        default: false
+      PUBLIC_API_ID:
         type: string
         required: false
-      INTERNAL_README_URL:
+      PUBLISH_TO_INTERNAL_README:
+        type: boolean
+        default: false
+      INTERNAL_API_ID:
         type: string
-        required: true
+        required: false
     secrets:
       SLACK_WEBHOOK_URL:
         required: true
@@ -325,14 +331,27 @@ jobs:
           name: OpenApi spec
           path: target/
       
-      - name: Publish OpenAPI spec to internal readme.io
-        run: |  
-          curl --location --request PUT "${{ inputs.INTERNAL_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_API_KEY }}:' --form 'spec=@target/openapi.json'
+      # - name: Publish OpenAPI spec to internal readme.io
+      #   if: startsWith(inputs.INTERNAL_README_URL, 'http')
+      #   run: |  
+      #     curl --location --request PUT "${{ inputs.INTERNAL_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_API_KEY }}:' --form 'spec=@target/openapi.json'
       
+      - name: Publish OpenAPI spec to internal readme.io
+        uses: readmeio/rdme@7.2.0
+        if: ${{ inputs.PUBLISH_TO_INTERNAL_README == 'true' }}
+        with:
+          rdme: openapi target/openapi.json --key=${{ secrets.README_IO_API_KEY }} --id=${{ inputs.INTERNAL_API_ID }}"
+      
+      # - name: Publish OpenAPI spec to public readme.io
+      #   if: startsWith(inputs.PUBLIC_README_URL, 'http')
+      #   run: |  
+      #     curl --location --request PUT "${{ inputs.PUBLIC_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_PUBLIC_API_KEY }}:' --form 'spec=@target/openapi.json'
+
       - name: Publish OpenAPI spec to public readme.io
-        if: startsWith(inputs.PUBLIC_README_URL, 'http')
-        run: |  
-          curl --location --request PUT "${{ inputs.PUBLIC_README_URL }}" --header 'x-readme-version: 1.0' --header 'x-readme-source: github' -u '${{ secrets.README_IO_PUBLIC_API_KEY }}:' --form 'spec=@target/openapi.json'
+        uses: readmeio/rdme@7.2.0
+        if: ${{ inputs.PUBLISH_TO_PUBLIC_README == 'true' }}
+        with:
+          rdme: openapi target/openapi.json --key=${{ secrets.README_IO_PUBLIC_API_KEY }} --id=${{ inputs.PUBLIC_API_ID }}
 
       - name: Slack Notification
         if: ${{ failure() }}
