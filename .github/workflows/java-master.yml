@@ -340,7 +340,7 @@ jobs:
         uses: readmeio/rdme@7.2.0
         if: ${{ inputs.PUBLISH_TO_INTERNAL_README == 'true' }}
         with:
-          rdme: openapi target/openapi.json --key=${{ secrets.README_IO_API_KEY }} --id=${{ inputs.INTERNAL_API_ID }}"
+          rdme: openapi target/openapi.json --key="${{ secrets.README_IO_API_KEY }}" --id="${{ inputs.INTERNAL_API_ID }}"
       
       # - name: Publish OpenAPI spec to public readme.io
       #   if: startsWith(inputs.PUBLIC_README_URL, 'http')
@@ -351,7 +351,7 @@ jobs:
         uses: readmeio/rdme@7.2.0
         if: inputs.PUBLISH_TO_PUBLIC_README == 'true'
         with:
-          rdme: openapi target/openapi.json --key=${{ secrets.README_IO_PUBLIC_API_KEY }} --id=${{ inputs.PUBLIC_API_ID }}
+          rdme: openapi target/openapi.json --key="${{ secrets.README_IO_PUBLIC_API_KEY }}" --id="${{ inputs.PUBLIC_API_ID }}"
 
       - name: Slack Notification
         if: ${{ failure() }}
