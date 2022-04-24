@@ -100,7 +100,7 @@ jobs:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
         coverageCommand: npm run coverage
-
+        debug: true
   define-vairables:
     if: github.ref == 'refs/heads/master'
     name: Retrive Variables

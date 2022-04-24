@@ -338,7 +338,7 @@ jobs:
       
       - name: Publish OpenAPI spec to internal readme.io
         uses: readmeio/rdme@7.2.0
-        if: ${{ inputs.PUBLISH_TO_INTERNAL_README == 'true' }}  
+        if: ${{ inputs.PUBLISH_TO_INTERNAL_README == 'true' }}
         with:
           rdme: openapi target/openapi.json --key=${{ secrets.README_IO_API_KEY }} --id=${{ inputs.INTERNAL_API_ID }}"
       
