@@ -195,11 +195,11 @@ jobs:
           coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
 
       - name: Generate OpenAPI spec
-        if: github.ref == 'refs/heads/master'
+        if: contains(github.ref,'master')
         run: mvn post-integration-test -DgenerateOpenApiDocs=true -DskipTests --settings .github/settings.xml
       
       - name: Update API url in OpenAPI spec
-        if: github.ref == 'refs/heads/master'
+        if: contains(github.ref,'master')
         uses: jossef/action-set-json-field@v1
         with:
           file: target/openapi.json
@@ -208,14 +208,14 @@ jobs:
           parse_json: true
       
       - name: Upload OpenAPI spec
-        if: github.ref == 'refs/heads/master'
+        if: contains(github.ref,'master')
         uses: actions/upload-artifact@v1
         with:
           name: OpenApi spec
           path: target/openapi.json
       
-  define-vairables:
-    if: github.ref == 'refs/heads/master'
+  define-variables:
+    if: contains(github.ref,'master')
     name: Retrive Variables
     runs-on: ubuntu-20.04
     steps:
@@ -230,10 +230,10 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
 
   build:
-    if: github.ref == 'refs/heads/master'
+    if: contains(github.ref,'master')
     name: Build
     runs-on: ubuntu-20.04
-    needs: ["define-vairables", "test"]
+    needs: ["define-variables", "test"]
 
     steps:
       - uses: actions/checkout@v1
@@ -268,16 +268,16 @@ jobs:
       - name: Build, tag, and push image to GCR
         id: build-image
         env:
-          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
         run: |
           docker build -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG .
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG
   
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: contains(github.ref,'master')
     name: Deploy
     runs-on: ubuntu-20.04
-    needs: ["build", "define-vairables"]
+    needs: ["build", "define-variables"]
     steps:
       - uses: actions/checkout@v1
 
@@ -307,7 +307,7 @@ jobs:
       
       - name: Deploy to K8S
         env:
-          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
         run: |
           echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
@@ -319,7 +319,7 @@ jobs:
           fi
 
   publish-docs:
-    if: github.ref == 'refs/heads/master'
+    if: contains(github.ref,'master')
     name: Publish documentation to Readme.io
     runs-on: ubuntu-latest
     needs: [ "deploy" ]
