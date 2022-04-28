@@ -94,14 +94,14 @@ jobs:
         npm run lint
         npm run test
     
-    - name: Run tests and report coverage
-      uses: paambaati/codeclimate-action@v2.7.4
-      env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-      with:
-        coverageCommand: npm run coverage
-        coverageLocations: |
-          ${{github.workspace}}/coverage/lcov.info:lcov
+    # - name: Run tests and report coverage
+    #   uses: paambaati/codeclimate-action@v2.7.4
+    #   env:
+    #     CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+    #   with:
+    #     coverageCommand: npm run coverage
+    #     coverageLocations: |
+    #       ${{github.workspace}}/coverage/lcov.info:lcov
 
   define-vairables:
     if: github.ref == 'refs/heads/master'
