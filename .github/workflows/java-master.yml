@@ -194,12 +194,21 @@ jobs:
           coverageCommand: mvn -B clean verify -Dspotbugs.skip=true --settings .github/settings.xml
           coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
 
+      - name: Check if inputs present
+        id: vars
+        run: |
+          if [[ -n "${{ inputs.GATEWAY_URLS }}" ]]; then
+            echo "::set-ouptut name=present::true"
+          else
+            echo "::set-ouptut name=present::false"
+          fi
+
       - name: Generate OpenAPI spec
-        if: contains(github.ref,'master')
+        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present }}
         run: mvn post-integration-test -DgenerateOpenApiDocs=true -DskipTests --settings .github/settings.xml
       
       - name: Update API url in OpenAPI spec
-        if: contains(github.ref,'master')
+        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present }}
         uses: jossef/action-set-json-field@v1
         with:
           file: target/openapi.json
@@ -208,7 +217,7 @@ jobs:
           parse_json: true
       
       - name: Upload OpenAPI spec
-        if: contains(github.ref,'master')
+        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present }}
         uses: actions/upload-artifact@v1
         with:
           name: OpenApi spec
