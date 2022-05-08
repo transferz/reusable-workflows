@@ -72,21 +72,9 @@ on:
       INTERNAL_API_ID:
         type: string
         required: false
-      SPOTBUGS_MVN_ARGS:
-        type: string
-        default: "-B verify -DskipTests -DskipITs --settings .github/settings.xml"
-      SPOTLESS_MVN_ARGS:
-        type: string
-        default: "-B clean spotless:check --settings .github/settings.xml"
-      SPOTLESS_CHECK_MVN_ARGS:
-        type: string
-        default: "-B site --settings .github/settings.xml"
-      TESTS_MVN_ARGS:
-        type: string
-        default: "-B clean package -DskipTests -Dspotbugs.skip=true --settings .github/settings.xml"
       ENABLE_PG_SETUP:
-        type: string
-        default: "true"
+        type: boolean
+        default: true
     secrets:
       SLACK_WEBHOOK_URL:
         required: true
@@ -131,7 +119,7 @@ jobs:
         with:
           java-version: ${{ inputs.JAVA_VERSION }}
       - name: Run Spotless Check
-        run: mvn ${{ inputs.SPOTLESS_MVN_ARGS }}
+        run: mvn -B clean spotless:check --settings .github/settings.xml
 
   spotbugs:
     name: Check for bugs
@@ -151,9 +139,9 @@ jobs:
         with:
           java-version: ${{ inputs.JAVA_VERSION }}
       - name: Run SpotBugs Check
-        run: mvn ${{ inputs.SPOTBUGS_MVN_ARGS }}
+        run: mvn -B verify -DskipTests -DskipITs --settings .github/settings.xml
       - if: failure()
-        run: mvn ${{ inputs.SPOTLESS_CHECK_MVN_ARGS }}
+        run: mvn -B site --settings .github/settings.xml
       - if: failure()
         uses: actions/upload-artifact@v2
         with:
@@ -180,7 +168,7 @@ jobs:
       - uses: actions/checkout@v1
       
       - name: Setup database
-        if: ${{ inputs.ENABLE_PG_SETUP == 'true' }}
+        if: ${{ inputs.ENABLE_PG_SETUP }}
         working-directory: .docker
         run: |
           sudo apt-get update
@@ -188,7 +176,6 @@ jobs:
           bash setup-postgres.sh
         env:
           PGPASSWORD: aVeryHardPasswordToGuess
-     
       - name: Cache Maven dependencies
         uses: actions/cache@v2
         env:
@@ -196,15 +183,12 @@ jobs:
         with:
           path: ~/.m2
           key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('pom.xml') }}
-      
       - name: Set up JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: ${{ inputs.JAVA_VERSION }}
-      
       - name: Maven Package
-        run: mvn ${{ inputs.TESTS_MVN_ARGS }}
-      
+        run: mvn -B clean package -DskipTests -Dspotbugs.skip=true --settings .github/settings.xml
       - name: Test & publish code coverage
         uses: paambaati/codeclimate-action@v3.0.0
         env:
