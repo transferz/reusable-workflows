@@ -21,6 +21,12 @@ on:
       GTIHUB_ACTIONS_EMAIL:
         type: string
         required: true
+      GCP_ACCOUNT_USER:
+        type: string
+        required: true
+      GCR_REPOSITORY:
+        type: string
+        required: true  
       HELM_CHART:
         type: string
         default: "service" 
@@ -45,6 +51,9 @@ on:
       GITHUB_ORG:
         type: string
         required: true
+      GITHUB_BRANCH:
+        default: "master"
+        type: string
       PUBLISH_TO_PUBLIC_README:
         type: string
         default: "false"
