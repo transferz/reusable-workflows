@@ -1,0 +1,215 @@
+name: Master
+
+on:
+  workflow_call:
+    inputs:
+      PHP_VERSION:
+        type: string
+        required: true
+      GKE_NAME:
+        type: string
+        required: true
+      GKE_ZONE:
+        type: string
+        required: true
+      GKE_PROJECT:
+        type: string
+        required: true
+      GCR_REGISTRY:
+        type: string
+        required: true
+      GTIHUB_ACTIONS_EMAIL:
+        type: string
+        required: true
+      HELM_CHART:
+        type: string
+        default: "service" 
+      HELM_VALUES:
+        type: string
+        required: true
+      HELM_NAMESPACE:
+        type: string
+        default: "staging"
+      HELM_REPOSITORY:
+        type: string
+        required: true 
+      HELM_ROLLOUT_TIMEOUT:
+        default: "600s"
+        type: string
+      HELM_REGISTRY:
+        type: string
+        required: true
+      HELM_CHART_VERSION:
+        type: string
+        default: "0.4.0"
+      GITHUB_ORG:
+        type: string
+        required: true
+      PUBLISH_TO_PUBLIC_README:
+        type: string
+        default: "false"
+      PUBLIC_API_ID:
+        type: string
+        required: false
+      PUBLISH_TO_INTERNAL_README:
+        type: string
+        default: "false"
+      INTERNAL_API_ID:
+        type: string
+        required: false
+    secrets:
+      HELM_REGISTRY_KEY:
+        required: true
+      ACTIONS_SSH_KEY:
+        required: true
+      GCP_ACCOUNT_KEY:
+        required: true
+      CC_TEST_REPORTER_ID:
+        required: true
+
+jobs:
+  test-push-coverage:
+    name: Perform unit tests and push coverage to codeclimate
+    runs-on: ubuntu-20.04
+
+    env:
+      BROADCAST_DRIVER: log
+      DB_HOST: localhost
+      DB_PASSWORD: postgre
+      DB_USER: postgre
+      DB_DATABASE: postgre
+      DB_DB: postgre
+      DB_PORT: 5432
+      APP_ENV: testing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create database
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '12'
+          postgresql user: postgre
+          postgresql db: postgre
+          postgresql password: postgre
+
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2 #https://github.com/shivammathur/setup-php
+        with:
+          php-version: '8.0'
+          extensions: mbstring, dom, fileinfo, pgsql
+          coverage: xdebug #optional
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        working-directory: ./src
+        run: |
+          composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Prepare the application
+        working-directory: ./src
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Run database migrations
+        working-directory: ./src
+        run: |
+          php artisan migrate
+
+      - name: Test with phpunit
+        working-directory: ./src
+        run: vendor/bin/phpunit --coverage-clover clover.xml
+
+      - name: Test & publish code coverage
+        uses: paambaati/codeclimate-action@v3.0.0
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageLocations: ${{github.workspace}}/src/clover.xml:clover
+
+  define-variables:
+    if: contains(github.ref,'master')
+    name: Retrive Variables
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      
+      - name: Get commit version
+        id: commit
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        
+    outputs:
+      commit: ${{ steps.commit.outputs.sha_short }}
+      version: ${{ steps.version.outputs.VERSION }}
+  
+  build:
+    name: Build
+    runs-on: ubuntu-20.04
+    needs: [ "define-variables" ]
+    steps:
+      - uses: actions/checkout@v1
+      
+      - name: Gcloud Authentication
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: '297.0.0'
+      
+      - name: Configure the docker credentials
+        run: |
+          gcloud auth configure-docker ${{ inputs.GKE_ZONE }} --quiet
+      
+      - name: Build, tag, and push image to GCR
+        id: build-image
+        env:
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
+        run: |
+          docker build -t $${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${{ inputs.IMAGE_TAG }} -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:latest .
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:latest
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${{ inputs.IMAGE_TAG }}
+
+  deploy:
+    name: "Deploy to staging"
+
+    steps:      
+      - uses: actions/checkout@v1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: '${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_REPOSITORY }}'
+          path: ${{ inputs.HELM_REPOSITORY }}
+          ref: ${{ inputs.GITHUB_BRANCH }}
+          ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
+
+      - name: Configure the cluster credentials
+        run: |
+          gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
+      
+      - name: "Check Helm Version"
+        run: helm version 
+      
+      - name: Deploy to K8S
+        env:
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
+        run: |
+          echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
+
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag=${{ inputs.IMAGE_TAG }} oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version '${{ inputs.HELM_CHART_VERSION }}' ; then
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=${{ inputs.IMAGE_TAG }} -l app.kubernetes.io/name=${{ github.event.repository.name }}
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=${{ inputs.IMAGE_TAG }} -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
+            helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
+            exit 1
+          fi

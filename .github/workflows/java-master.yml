@@ -5,7 +5,7 @@ on:
     inputs:
       JAVA_VERSION:
         type: string
-        required: true
+        default: "11.0.13"
       POSTRGES_SERVICE_IMAGE:
         type: string
         default: "postgres:12"
