@@ -328,7 +328,7 @@ jobs:
           fi
 
   publish-docs:
-    if: contains(github.ref,'master')
+    if: ${{ contains(github.ref, 'master') && inputs.PUBLISH_TO_INTERNAL_README == 'true' || inputs.PUBLISH_TO_PUBLIC_README == 'true' }}
     name: Publish documentation to Readme.io
     runs-on: ubuntu-latest
     needs: [ "deploy" ]
