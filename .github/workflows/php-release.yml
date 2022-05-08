@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      GKE_NAME:
+        type: string
+        required: true
+      GKE_ZONE:
+        type: string
+        required: true
+      GKE_PROJECT:
+        type: string
+        required: true
+      GTIHUB_ACTIONS_EMAIL:
+        type: string
+        required: true  
+      HELM_CHART:
+        type: string
+        default: "service" 
+      HELM_VALUES:
+        type: string
+        required: true
+      HELM_NAMESPACE:
+        type: string
+        default: "staging"
+      HELM_REPOSITORY:
+        type: string
+        required: true 
+      HELM_ROLLOUT_TIMEOUT:
+        default: "600s"
+        type: string
+      HELM_REGISTRY:
+        type: string
+        required: true
+      HELM_CHART_VERSION:
+        type: string
+        default: "0.4.0"
+      GITHUB_ORG:
+        type: string
+        required: true
+      GITHUB_BRANCH:
+        default: "master"
+        type: string
+    secrets:
+      HELM_REGISTRY_KEY:
+        required: true
+      ACTIONS_SSH_KEY:
+        required: true
+      GCP_ACCOUNT_KEY:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: true
+
+
+env:
+  HELM_EXPERIMENTAL_OCI: 1
+
+jobs:
+  define-vairables:
+    name: Retrive Variables
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      
+      - name: Get commit version
+        id: commit
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Get Release version
+        id: version
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+    
+    outputs:
+      commit: ${{ steps.commit.outputs.sha_short }}
+      version: ${{ steps.version.outputs.VERSION }}
+  retag:
+    name: Retag Image
+    runs-on: ubuntu-20.04
+    needs: ["define-vairables"]
+    steps:
+      - name: Gcloud Authentication
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: '297.0.0'
+
+      - name: Configure the docker credentials   
+        run: |
+          gcloud auth configure-docker --quiet
+
+      - name: Download and retag application Docker image
+        id: retag-image
+        env:
+          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
+        run: |
+          docker pull "${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG"
+          docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
+  deploy:
+    if: contains(github.ref,'master')
+    name: "Deploy to staging"
+    runs-on: ubuntu-20.04
+    needs: [ "define-variables", "retag" ]
+    steps:      
+      - uses: actions/checkout@v1
+
+      - name: Gcloud Authentication
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json:  ${{ secrets.GCP_ACCOUNT_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: '297.0.0'
+
+      - uses: actions/checkout@v2
+        with:
+          repository: '${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_REPOSITORY }}'
+          path: ${{ inputs.HELM_REPOSITORY }}
+          ref: ${{ inputs.GITHUB_BRANCH }}
+          ssh-key: '${{ secrets.ACTIONS_SSH_KEY }}'
+
+      - name: Configure the cluster credentials
+        run: |
+          gcloud container clusters get-credentials ${{ inputs.GKE_NAME }} --zone ${{ inputs.GKE_ZONE }} --project ${{ inputs.GKE_PROJECT }}
+
+      - name: "Check Helm Version"
+        run: helm version 
+      
+      - name: Deploy to K8S
+        env:
+          VERSION_TAG: ${{ needs.define-vairables.outputs.version }}
+        run: |
+          echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
+
+          if ! helm -n ${{ inputs.HELM_NAMESPACE }} upgrade --install ${{ github.event.repository.name }} --wait '--timeout=${{ inputs.HELM_ROLLOUT_TIMEOUT }}' -f ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }} --set-string image.tag=$VERSION_TAG oci://${{ inputs.HELM_REGISTRY }}/${{ inputs.HELM_CHART }} --version '${{ inputs.HELM_CHART_VERSION }}' ; then
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} describe po -l app.kubernetes.io/version=$VERSION_TAG -l app.kubernetes.io/name=${{ github.event.repository.name }}
+            kubectl -n ${{ inputs.HELM_NAMESPACE }} logs --tail=2000 -l app.kubernetes.io/version=$VERSION_TAG -l app.kubernetes.io/name=${{ github.event.repository.name }} --all-containers || true
+            helm -n ${{ inputs.HELM_NAMESPACE }} rollback ${{ github.event.repository.name }} 0
+            exit 1
+          fi
+
+      - name: Slack Notification
+        if: ${{ always() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: "deployments"
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
+          SLACK_ICON: " https://github.com/rtCamp.png?size=48"
+          SLACK_MESSAGE: ${{ github.event.head_commit.message }}
+          SLACK_TITLE: "Commit Message"
+          SLACK_USERNAME: "GitHub Actions"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }} 

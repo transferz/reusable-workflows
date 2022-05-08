@@ -78,9 +78,12 @@ on:
       SLACK_WEBHOOK_URL:
         required: true
 
+env:
+  HELM_EXPERIMENTAL_OCI: 1
+
 jobs:
-  test-push-coverage:
-    name: Perform unit tests and push coverage to codeclimate
+  phpunit:
+    name: Unit & integration Tests
     runs-on: ubuntu-20.04
 
     env:
@@ -166,7 +169,7 @@ jobs:
     if: contains(github.ref,'master')
     name: Build
     runs-on: ubuntu-20.04
-    needs: [ "define-variables", "test-push-coverage" ]
+    needs: [ "define-variables", "phpunit" ]
     steps:
       - uses: actions/checkout@v1
       
