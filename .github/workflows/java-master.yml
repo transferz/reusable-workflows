@@ -72,6 +72,15 @@ on:
       INTERNAL_API_ID:
         type: string
         required: false
+      SPOTBUGS_MVN_ARGS:
+        type: string
+        default: "-B verify -DskipTests -DskipITs --settings .github/settings.xml"
+      SPOTLESS_MVN_ARGS:
+        type: string
+        default: "-B clean spotless:check --settings .github/settings.xml"
+      SPOTLESS_CHECK_MVN_ARGS:
+        type: string
+        default: "-B site --settings .github/settings.xml"
     secrets:
       SLACK_WEBHOOK_URL:
         required: true
@@ -116,7 +125,7 @@ jobs:
         with:
           java-version: ${{ inputs.JAVA_VERSION }}
       - name: Run Spotless Check
-        run: mvn -B clean spotless:check --settings .github/settings.xml
+        run: mvn ${{ inputs.SPOTLESS_MVN_ARGS }}
 
   spotbugs:
     name: Check for bugs
@@ -136,9 +145,9 @@ jobs:
         with:
           java-version: ${{ inputs.JAVA_VERSION }}
       - name: Run SpotBugs Check
-        run: mvn -B verify -DskipTests -DskipITs --settings .github/settings.xml
+        run: mvn ${{ inputs.SPOTBUGS_MVN_ARGS }}
       - if: failure()
-        run: mvn -B site --settings .github/settings.xml
+        run: mvn ${{ inputs.SPOTLESS_CHECK_MVN_ARGS }}
       - if: failure()
         uses: actions/upload-artifact@v2
         with:
