@@ -189,9 +189,9 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
         run: |
-          docker build -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${{ inputs.IMAGE_TAG }} -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:latest .
+          docker build -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG  -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:latest .
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:latest
-          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${{ inputs.IMAGE_TAG }}
+          docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG
 
   deploy:
     if: contains(github.ref,'master')
