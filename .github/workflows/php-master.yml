@@ -154,9 +154,10 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
   
   build:
+    if: contains(github.ref,'master')
     name: Build
     runs-on: ubuntu-20.04
-    needs: [ "define-variables" ]
+    needs: [ "define-variables", "test-push-coverage" ]
     steps:
       - uses: actions/checkout@v1
       
@@ -184,8 +185,10 @@ jobs:
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${{ inputs.IMAGE_TAG }}
 
   deploy:
+    if: contains(github.ref,'master')
     name: "Deploy to staging"
-
+    runs-on: ubuntu-20.04
+    needs: [ "define-variables", "build" ]
     steps:      
       - uses: actions/checkout@v1
 
