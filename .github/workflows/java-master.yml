@@ -53,7 +53,7 @@ on:
         required: true
       GATEWAY_URLS:
         type: string
-        required: true
+        required: false
       GITHUB_ORG:
         type: string
         required: true
