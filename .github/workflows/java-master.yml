@@ -151,7 +151,7 @@ jobs:
   test:
     name: Run unit & integration tests
     runs-on: ubuntu-20.04
-    needs: [formatting, spotbugs]
+    needs: [ "formatting", "spotbugs"]
 
     services:
       postgres:
