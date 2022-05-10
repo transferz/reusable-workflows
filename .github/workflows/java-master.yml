@@ -200,10 +200,9 @@ jobs:
           coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
 
       - name: Check if inputs present
-        if: false
         id: vars
         run: |
-          if [[ -n "${{ inputs.GATEWAY_URLS }}" ]]; then
+          if [[ -n '${{ inputs.GATEWAY_URLS }}' ]]; then
             echo "::set-output name=present::true"
           else
             echo "::set-output name=present::false"
