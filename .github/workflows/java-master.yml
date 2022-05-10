@@ -200,12 +200,13 @@ jobs:
           coverageLocations: ${{ github.workspace }}/target/site/jacoco/jacoco.xml:jacoco
 
       - name: Check if inputs present
+        if: false
         id: vars
         run: |
           if [[ -n "${{ inputs.GATEWAY_URLS }}" ]]; then
-            echo "::set-ouptut name=present::true"
+            echo "::set-output name=present::true"
           else
-            echo "::set-ouptut name=present::false"
+            echo "::set-output name=present::false"
           fi
 
       - name: Generate OpenAPI spec
