@@ -203,17 +203,17 @@ jobs:
         id: vars
         run: |
           if [ '${{ inputs.GATEWAY_URLS }}' == '' ]; then
-            echo "::set-output name=present::false"
-          else
             echo "::set-output name=present::true"
+          else
+            echo "::set-output name=present::false"
           fi
 
       - name: Generate OpenAPI spec
-        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present == "true" }}
+        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present == 'true' }}
         run: mvn post-integration-test -DgenerateOpenApiDocs=true -DskipTests --settings .github/settings.xml
       
       - name: Update API url in OpenAPI spec
-        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present == "true" }}
+        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present == 'true' }}
         uses: jossef/action-set-json-field@v1
         with:
           file: target/openapi.json
@@ -222,7 +222,7 @@ jobs:
           parse_json: true
       
       - name: Upload OpenAPI spec
-        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present == "true" }}
+        if: ${{ contains(github.ref, 'master') && steps.vars.outputs.present == 'true' }}
         uses: actions/upload-artifact@v1
         with:
           name: OpenApi spec
