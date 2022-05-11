@@ -203,9 +203,9 @@ jobs:
         id: vars
         run: |
           if [ '${{ inputs.GATEWAY_URLS }}' == '' ]; then
-            echo "::set-output name=present::true"
-          else
             echo "::set-output name=present::false"
+          else
+            echo "::set-output name=present::true"
           fi
 
       - name: Generate OpenAPI spec
