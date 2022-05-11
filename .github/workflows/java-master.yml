@@ -202,10 +202,10 @@ jobs:
       - name: Check if inputs present
         id: vars
         run: |
-          if [[ -n '${{ inputs.GATEWAY_URLS }}' ]]; then
-            echo "::set-output name=present::true"
-          else
+          if [ '${{ inputs.GATEWAY_URLS }}' == '' ]; then
             echo "::set-output name=present::false"
+          else
+            echo "::set-output name=present::true"
           fi
 
       - name: Generate OpenAPI spec
