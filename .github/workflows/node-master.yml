@@ -41,7 +41,7 @@ on:
         default: "service"
       HELM_CHART_VERSION:
         type: string
-        default: "0.4.0"
+        default: "0.4.1"
       GITHUB_BRANCH:
         default: "master"
         type: string
