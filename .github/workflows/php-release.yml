@@ -115,7 +115,7 @@ jobs:
     if: contains(github.ref,'master')
     name: "Deploy to staging"
     runs-on: ubuntu-20.04
-    needs: [ "define-variables", "retag" ]
+    needs: [ "define-vairables", "retag" ]
     steps:      
       - uses: actions/checkout@v1
 
