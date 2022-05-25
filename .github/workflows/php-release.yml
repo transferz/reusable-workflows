@@ -12,6 +12,9 @@ on:
       GKE_PROJECT:
         type: string
         required: true
+      GCR_REPOSITORY:
+        type: string
+        required: true
       GTIHUB_ACTIONS_EMAIL:
         type: string
         required: true  
