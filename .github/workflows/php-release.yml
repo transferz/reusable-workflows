@@ -12,6 +12,9 @@ on:
       GKE_PROJECT:
         type: string
         required: true
+      GCR_REGISTRY:
+        type: string
+        required: true
       GCR_REPOSITORY:
         type: string
         required: true
