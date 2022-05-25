@@ -21,6 +21,9 @@ on:
       GTIHUB_ACTIONS_EMAIL:
         type: string
         required: true  
+      GCP_ACCOUNT_USER:
+        type: string
+        required: true
       HELM_CHART:
         type: string
         default: "service" 
