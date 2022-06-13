@@ -134,6 +134,10 @@ jobs:
         working-directory: ./src
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
+      - name: Generate key
+        working-directory: ./src
+        run: php artisan key:generate
+
       - name: Run database migrations
         working-directory: ./src
         run: |
@@ -249,6 +253,6 @@ jobs:
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
           SLACK_ICON: " https://github.com/rtCamp.png?size=48"
           SLACK_MESSAGE: ${{ github.event.head_commit.message }}
-          SLACK_TITLE: "Commit Message"
+          SLACK_TITLE: "Message"
           SLACK_USERNAME: "GitHub Actions"
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }} 
