@@ -134,14 +134,14 @@ jobs:
         working-directory: ./src
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - name: Generate key
-        working-directory: ./src
-        run: php artisan key:generate
-
       - name: Run database migrations
         working-directory: ./src
         run: |
           php artisan migrate
+
+      - name: Generate key
+        working-directory: ./src
+        run: php artisan key:generate
 
       - name: Test with phpunit
         working-directory: ./src
