@@ -99,6 +99,26 @@ jobs:
             exit 1
           fi
 
+      - name: Update staging value.yaml
+        uses: mikefarah/yq@master
+        env:
+          VERSION_TAG: ${{ inputs.APP_VERSION }}
+        with:
+          cmd: yq -i ".image.tag = env(VERSION_TAG)" ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }}
+      
+      - name: Push changes to git
+        working-directory: ${{ inputs.HELM_REPOSITORY }}
+        run: |
+          echo "${{ secrets.ACTIONS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          git config --global user.name "GitHub Actions"
+          git config --global user.email ${{ inputs.GTIHUB_ACTIONS_EMAIL }}
+
+          git add .
+          git commit -m "[skip ci] update snapshot version for ${{ github.event.repository.name }}"
+          git pull origin master --rebase && git push
+
       - name: Slack Notification
         if: ${{ always() }}
         uses: rtCamp/action-slack-notify@v2
