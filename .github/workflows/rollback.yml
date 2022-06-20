@@ -99,7 +99,7 @@ jobs:
             exit 1
           fi
 
-      - name: Update staging value.yaml
+      - name: Update value.yaml
         uses: mikefarah/yq@master
         env:
           VERSION_TAG: ${{ inputs.APP_VERSION }}
