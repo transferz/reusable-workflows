@@ -332,7 +332,7 @@ jobs:
             exit 1
           fi
 
-      - name: Update staging value.yaml
+      - name: Update value.yaml
         uses: mikefarah/yq@master
         env:
           IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
