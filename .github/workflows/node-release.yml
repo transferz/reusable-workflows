@@ -62,7 +62,7 @@ env:
   HELM_EXPERIMENTAL_OCI: 1
 
 jobs:
-  define-vairables:
+  define-variables:
     name: Retrive Variables
     runs-on: ubuntu-20.04
     steps:
@@ -83,7 +83,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-18.04
-    needs: [ "define-vairables" ]
+    needs: [ "define-variables" ]
     steps:
       - uses: actions/checkout@v1
 
@@ -114,8 +114,8 @@ jobs:
       - name: Download and retag application Docker image
         id: retag-image
         env:
-          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
-          VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
+          VERSION_TAG: ${{ needs.define-variables.outputs.version }} 
         run: |
           docker pull ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG}
           docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG} ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${VERSION_TAG}
@@ -123,8 +123,8 @@ jobs:
 
       - name: Deploy to K8S
         env:
-          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
-          VERSION_TAG: ${{ needs.define-vairables.outputs.version }} 
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
+          VERSION_TAG: ${{ needs.define-variables.outputs.version }} 
         run: |
           echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
@@ -138,7 +138,7 @@ jobs:
       - name: Update staging value.yaml
         uses: mikefarah/yq@master
         env:
-          VERSION_TAG: ${{ needs.define-vairables.outputs.version }}
+          VERSION_TAG: ${{ needs.define-variables.outputs.version }}
         with:
           cmd: yq -i ".image.tag = env(VERSION_TAG)" ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }}
       

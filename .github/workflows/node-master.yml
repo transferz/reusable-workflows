@@ -103,7 +103,7 @@ jobs:
     #     coverageLocations: |
     #       ${{github.workspace}}/coverage/lcov.info:lcov
 
-  define-vairables:
+  define-variables:
     if: github.ref == 'refs/heads/master'
     name: Retrive Variables
     runs-on: ubuntu-20.04
@@ -126,7 +126,7 @@ jobs:
   build:
     if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
     name: Build
-    needs: [ "define-vairables" ]
+    needs: [ "define-variables" ]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v1
@@ -149,7 +149,7 @@ jobs:
       - name: Build, tag, and push image to GCR
         id: build-image
         env:
-          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
         run: |
           docker build --build-arg npm_token=${{ secrets.GH_TOKEN }} --build-arg COMMIT=${IMAGE_TAG} -t ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG} .
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:${IMAGE_TAG}
@@ -158,7 +158,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'skip ci')
     name: Deploy to Staging
     runs-on: ubuntu-18.04
-    needs: [ "define-vairables", "build" ]
+    needs: [ "define-variables", "build" ]
     steps:
       - uses: actions/checkout@v1
 
@@ -185,7 +185,7 @@ jobs:
       
       - name: Deploy to K8S
         env:
-          IMAGE_TAG: ${{ needs.define-vairables.outputs.commit }}
+          IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
         run: |
           echo "${{ secrets.HELM_REGISTRY_KEY }}" | helm registry login ${{ inputs.HELM_REGISTRY }} --username ${{ inputs.GCP_ACCOUNT_USER }} --password-stdin
 
