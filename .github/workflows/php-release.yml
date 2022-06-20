@@ -112,7 +112,7 @@ jobs:
           docker image tag ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$IMAGE_TAG ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
           docker push ${{ inputs.GCR_REGISTRY }}/${{ inputs.GCR_REPOSITORY }}:$VERSION_TAG
   deploy:
-    name: "Deploy to staging"
+    name: "Deploy"
     runs-on: ubuntu-20.04
     needs: [ "define-vairables", "retag" ]
     steps:      
@@ -155,7 +155,7 @@ jobs:
             exit 1
           fi
 
-      - name: Update staging value.yaml
+      - name: Update value.yaml
         uses: mikefarah/yq@master
         env:
           VERSION_TAG: ${{ needs.define-vairables.outputs.version }}

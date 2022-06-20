@@ -202,7 +202,7 @@ jobs:
 
   deploy:
     if: contains(github.ref,'master')
-    name: "Deploy to staging"
+    name: "Deploy"
     runs-on: ubuntu-20.04
     needs: [ "define-variables", "build" ]
     steps:      
