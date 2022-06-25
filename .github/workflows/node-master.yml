@@ -204,7 +204,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
         run: |
-          sed -i "s/tag: .*/tag: '$IMAGE_TAG'/" ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }}
+          sed -i "s/tag: .*/tag: '$IMAGE_TAG'/" ${{ inputs.HELM_VALUES }}
           echo "${{ secrets.ACTIONS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
