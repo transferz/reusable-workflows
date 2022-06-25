@@ -138,16 +138,13 @@ jobs:
             exit 1
           fi
 
-      - name: Update value.yaml
-        uses: mikefarah/yq@master
-        env:
-          VERSION_TAG: ${{ needs.define-variables.outputs.version }}
-        with:
-          cmd: yq -i ".image.tag = env(VERSION_TAG)" ${{ inputs.HELM_REPOSITORY }}/${{ inputs.HELM_VALUES }}
-      
-      - name: Push changes to git
+      - if: contains(github.event_name, 'push')
+        name: Update and Push values
         working-directory: ${{ inputs.HELM_REPOSITORY }}
+        env:
+          VERSION_TAG: ${{ needs.define-vairables.outputs.version }}
         run: |
+          sed -i "s/tag: .*/tag: '$VERSION_TAG'/" ${{ inputs.HELM_VALUES }}
           echo "${{ secrets.ACTIONS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 

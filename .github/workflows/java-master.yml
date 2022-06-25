@@ -332,7 +332,8 @@ jobs:
             exit 1
           fi
       
-      - name: Update and Push values
+      - if: contains(github.event_name, 'push')
+        name: Update and Push values
         working-directory: ${{ inputs.HELM_REPOSITORY }}
         env:
           IMAGE_TAG: ${{ needs.define-variables.outputs.commit }}
